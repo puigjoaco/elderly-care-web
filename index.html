@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Supervisión de Cuidados</title>
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -565,7 +567,7 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpxbW9pdWN3cWVma2NlY3RtYWZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0Mzc3ODksImV4cCI6MjA3MjAxMzc4OX0.bb41mc9ctmo7eTciprc43lXJuvqh66xPLHqNAeDElKs';
         
         // Demo Mode (sin Supabase real)
-        const DEMO_MODE = true;
+        const DEMO_MODE = false; // CAMBIADO: Ahora usa Supabase real
         
         // Demo Users
         const demoUsers = {
