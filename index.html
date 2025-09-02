@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Supervisión de Cuidados</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .logo p {
+            color: #6b7280;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: 500;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .error-message {
+            color: #ef4444;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .dashboard {
+            display: none;
+            background: white;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h2 {
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background: #f3f4f6;
+            padding: 10px;
+            gap: 10px;
+            overflow-x: auto;
+        }
+        
+        .nav-tab {
+            padding: 10px 20px;
+            background: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s;
+        }
+        
+        .nav-tab.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .content {
+            padding: 20px;
+        }
+        
+        .card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .card h3 {
+            color: #1f2937;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-online { background: #10b981; color: white; }
+        .status-offline { background: #ef4444; color: white; }
+        .status-pending { background: #f59e0b; color: white; }
+        
+        .gps-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .gps-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .gps-valid { background: #10b981; }
+        .gps-invalid { background: #ef4444; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .medication-list {
+            list-style: none;
+        }
+        
+        .medication-item {
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .photo-upload {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .photo-upload:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        
+        .alert-box {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: flex;
+            align-items: start;
+            gap: 10px;
+        }
+        
+        .alert-warning {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+        }
+        
+        .alert-error {
+            background: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+        
+        .logout-btn {
+            background: #ef4444;
+            padding: 8px 16px;
+            border-radius: 6px;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            float: right;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @media (max-width: 640px) {
+            .login-card {
+                padding: 30px 20px;
+            }
+            
+            .nav-tabs {
+                padding: 5px;
+            }
+            
+            .nav-tab {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-container" id="loginScreen">
+        <div class="login-card">
+            <div class="logo">
+                <h1>🏥 CareTracker</h1>
+                <p>Sistema de Supervisión de Cuidados</p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Correo Electrónico</label>
+                    <input type="email" id="email" required placeholder="correo@ejemplo.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                
+                <button type="submit" id="loginBtn">Iniciar Sesión</button>
+                
+                <div class="error-message" id="errorMsg">
+                    Credenciales incorrectas
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Dashboard -->
+    <div class="dashboard" id="dashboard">
+        <div class="header">
+            <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+            <h2 id="userName">Bienvenido</h2>
+            <p id="userRole">Rol: Admin</p>
+        </div>
+        
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('attendance')">📍 Asistencia</button>
+            <button class="nav-tab" onclick="switchTab('medications')">💊 Medicamentos</button>
+            <button class="nav-tab" onclick="switchTab('meals')">🍽️ Comidas</button>
+            <button class="nav-tab" onclick="switchTab('reports')">📊 Reportes</button>
+            <button class="nav-tab" onclick="switchTab('config')">⚙️ Configuración</button>
+        </div>
+        
+        <div class="content">
+            <!-- Attendance Tab -->
+            <div id="attendance" class="tab-content active">
+                <div class="card">
+                    <h3>📍 Control de Asistencia</h3>
+                    
+                    <div class="gps-status">
+                        <span class="gps-dot gps-valid" id="gpsDot"></span>
+                        <span id="gpsText">GPS: Verificando ubicación...</span>
+                        <span class="status-badge status-online" id="gpsStatus">En rango</span>
+                    </div>
+                    
+                    <button onclick="markAttendance('in')" id="checkInBtn">
+                        ✅ Marcar Entrada
+                    </button>
+                    
+                    <button onclick="markAttendance('out')" id="checkOutBtn" style="background: #ef4444;">
+                        🚪 Marcar Salida
+                    </button>
+                    
+                    <div class="alert-box alert-error" id="gpsError" style="display: none;">
+                        ⚠️ Debe estar a menos de 30m del paciente para marcar asistencia
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>📸 Foto Obligatoria</h3>
+                    <div class="photo-upload" onclick="takePhoto()">
+                        <p>📷 Click para tomar foto</p>
+                        <small>Solo cámara en tiempo real</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Medications Tab -->
+            <div id="medications" class="tab-content">
+                <div class="card">
+                    <h3>💊 Medicamentos Pendientes</h3>
+                    <ul class="medication-list" id="medicationList">
+                        <li class="medication-item">
+                            <div>
+                                <strong>Metformina 850mg</strong><br>
+                                <small>Hora: 08:00 AM</small>
+                            </div>
+                            <button onclick="confirmMedication(this)" style="padding: 8px 16px;">
+                                📷 Confirmar con Foto
+                            </button>
+                        </li>
+                        <li class="medication-item">
+                            <div>
+                                <strong>Losartán 50mg</strong><br>
+                                <small>Hora: 08:00 AM</small>
+                            </div>
+                            <button onclick="confirmMedication(this)" style="padding: 8px 16px;">
+                                📷 Confirmar con Foto
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="alert-box alert-warning" id="medAlert" style="display: none;">
+                        ⏰ Recuerda: Sin foto = No se puede marcar como dado
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Meals Tab -->
+            <div id="meals" class="tab-content">
+                <div class="card">
+                    <h3>🍽️ Registro de Comidas</h3>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button onclick="registerMeal('breakfast')">
+                            🌅 Desayuno
+                        </button>
+                        <button onclick="registerMeal('lunch')">
+                            ☀️ Almuerzo
+                        </button>
+                        <button onclick="registerMeal('snack')">
+                            🍎 Merienda
+                        </button>
+                        <button onclick="registerMeal('dinner')">
+                            🌙 Cena
+                        </button>
+                    </div>
+                    
+                    <div class="alert-box alert-success" id="mealSuccess" style="display: none;">
+                        ✅ Comida registrada con foto
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reports Tab -->
+            <div id="reports" class="tab-content">
+                <div class="card">
+                    <h3>📊 Resumen del Día</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid #e5e7eb;">
+                            ✅ Entrada: 08:00 AM
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #e5e7eb;">
+                            💊 Medicamentos dados: 3/5
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #e5e7eb;">
+                            🍽️ Comidas registradas: 2/4
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #e5e7eb;">
+                            📷 Fotos tomadas: 7
+                        </li>
+                        <li style="padding: 10px 0;">
+                            ⚠️ Alertas: 1
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Config Tab -->
+            <div id="config" class="tab-content">
+                <div class="card" style="border: 2px solid #667eea;">
+                    <h3>👵 Configuración del Paciente (Adulto Mayor)</h3>
+                    
+                    <div class="form-group">
+                        <label>Nombre del Paciente</label>
+                        <input type="text" id="patientName" value="Carmen López García" placeholder="Nombre completo">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>📍 Dirección EXACTA donde vive</label>
+                        <input type="text" id="patientAddress" value="Calle Principal 123, Piso 3B, Madrid" placeholder="Dirección completa">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>🗺️ Coordenadas GPS (Obtener de Google Maps)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" id="patientLat" value="40.4168" step="0.0001" placeholder="Latitud">
+                            <input type="number" id="patientLng" value="-3.7038" step="0.0001" placeholder="Longitud">
+                        </div>
+                        <small style="color: #667eea;">
+                            💡 En Google Maps: Click derecho → "¿Qué hay aquí?" → Copiar coordenadas
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>📏 Radio permitido (metros)</label>
+                        <input type="number" id="gpsRadius" value="30" min="10" max="100">
+                        <small>La cuidadora debe estar dentro de este radio para marcar asistencia</small>
+                    </div>
+                    
+                    <button onclick="savePatientLocation()" style="background: #10b981;">
+                        📍 Guardar Ubicación del Paciente
+                    </button>
+                    
+                    <div class="alert-box alert-success" id="locationSaved" style="display: none;">
+                        ✅ Ubicación guardada. Las cuidadoras solo podrán marcar asistencia desde esta dirección.
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>⏰ Configuración de Tiempos de Alerta</h3>
+                    
+                    <div class="form-group">
+                        <label>⏱️ Espera antes de alertar por medicamentos (minutos)</label>
+                        <input type="number" id="medAlertTime" value="15" min="5" max="180">
+                        <small>Si no hay foto después de este tiempo, se notifica a TODOS</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>🍽️ Espera antes de alertar por comidas (minutos)</label>
+                        <input type="number" id="mealAlertTime" value="30" min="5" max="180">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>⚖️ Espera antes de alertar por peso diario (minutos)</label>
+                        <input type="number" id="weightAlertTime" value="120" min="30" max="360">
+                    </div>
+                    
+                    <button onclick="saveAlertConfig()">💾 Guardar Tiempos de Alerta</button>
+                </div>
+                
+                <div class="card">
+                    <h3>👥 Gestión de Cuidadoras</h3>
+                    
+                    <div class="form-group">
+                        <label>Cuidadora Actual</label>
+                        <select id="caregiverSelect">
+                            <option>Ana Martínez - Turno Mañana (8:00-14:00)</option>
+                            <option>Rosa Pérez - Turno Tarde (14:00-20:00)</option>
+                        </select>
+                    </div>
+                    
+                    <button onclick="addCaregiver()">➕ Agregar Nueva Cuidadora</button>
+                    <button onclick="removeCaregiver()" style="background: #ef4444;">🗑️ Eliminar Cuidadora</button>
+                </div>
+                
+                <div class="card">
+                    <h3>👨‍👩‍👧‍👦 Red Familiar (Observadores)</h3>
+                    
+                    <p>Estos familiares reciben TODAS las alertas pero NO pueden modificar configuración:</p>
+                    
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="padding: 8px; background: #f3f4f6; margin: 5px 0; border-radius: 6px;">
+                            👨 Juan García (Hijo) - juan@email.com
+                        </li>
+                        <li style="padding: 8px; background: #f3f4f6; margin: 5px 0; border-radius: 6px;">
+                            👩 Isabel López (Nieta) - isabel@email.com
+                        </li>
+                        <li style="padding: 8px; background: #f3f4f6; margin: 5px 0; border-radius: 6px;">
+                            👨 Pedro García (Hijo) - pedro@email.com
+                        </li>
+                    </ul>
+                    
+                    <button onclick="addFamilyMember()">➕ Agregar Familiar Observador</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://mwpbhobxbpzjszmqkisl.supabase.co';
+        const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY'; // Necesitas obtener esto de Supabase
+        
+        // Demo Mode (sin Supabase real)
+        const DEMO_MODE = true;
+        
+        // Demo Users
+        const demoUsers = {
+            'admin@demo.com': { password: 'demo123', role: 'admin', name: 'María García' },
+            'cuidadora@demo.com': { password: 'demo123', role: 'caregiver', name: 'Ana Martínez' },
+            'familiar@demo.com': { password: 'demo123', role: 'family_observer', name: 'Juan García' }
+        };
+        
+        let currentUser = null;
+        let gpsValid = false;
+        
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (DEMO_MODE) {
+                // Demo login
+                if (demoUsers[email] && demoUsers[email].password === password) {
+                    currentUser = demoUsers[email];
+                    currentUser.email = email;
+                    showDashboard();
+                } else {
+                    showError('Credenciales incorrectas. Prueba: admin@demo.com / demo123');
+                }
+            } else {
+                // Real Supabase login would go here
+                showError('Conecta con Supabase para login real');
+            }
+        });
+        
+        function showDashboard() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('userName').textContent = `Bienvenido, ${currentUser.name}`;
+            document.getElementById('userRole').textContent = `Rol: ${getRoleName(currentUser.role)}`;
+            
+            // Simulate GPS check
+            checkGPS();
+            
+            // Hide config tab for non-admins
+            if (currentUser.role !== 'admin') {
+                document.querySelector('[onclick="switchTab(\'config\')"]').style.display = 'none';
+            }
+        }
+        
+        function getRoleName(role) {
+            const roles = {
+                'admin': 'Administrador (Familiar)',
+                'caregiver': 'Cuidadora',
+                'family_observer': 'Familiar (Solo Lectura)'
+            };
+            return roles[role] || role;
+        }
+        
+        function showError(msg) {
+            const errorEl = document.getElementById('errorMsg');
+            errorEl.textContent = msg;
+            errorEl.style.display = 'block';
+            setTimeout(() => {
+                errorEl.style.display = 'none';
+            }, 5000);
+        }
+        
+        function logout() {
+            currentUser = null;
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+        }
+        
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active from all nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            
+            // Mark nav tab as active
+            event.target.classList.add('active');
+        }
+        
+        function checkGPS() {
+            // Simulate GPS check
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        // Simulate distance calculation
+                        const distance = Math.random() * 50; // Random distance for demo
+                        
+                        if (distance <= 30) {
+                            gpsValid = true;
+                            document.getElementById('gpsDot').className = 'gps-dot gps-valid';
+                            document.getElementById('gpsText').textContent = `GPS: ${distance.toFixed(0)}m del paciente`;
+                            document.getElementById('gpsStatus').textContent = 'En rango';
+                            document.getElementById('gpsStatus').className = 'status-badge status-online';
+                            document.getElementById('gpsError').style.display = 'none';
+                        } else {
+                            gpsValid = false;
+                            document.getElementById('gpsDot').className = 'gps-dot gps-invalid';
+                            document.getElementById('gpsText').textContent = `GPS: ${distance.toFixed(0)}m del paciente`;
+                            document.getElementById('gpsStatus').textContent = 'Fuera de rango';
+                            document.getElementById('gpsStatus').className = 'status-badge status-offline';
+                        }
+                    },
+                    (error) => {
+                        document.getElementById('gpsText').textContent = 'GPS: No disponible';
+                        gpsValid = false;
+                    }
+                );
+            }
+        }
+        
+        function markAttendance(type) {
+            if (!gpsValid) {
+                document.getElementById('gpsError').style.display = 'block';
+                alert('⛔ BLOQUEADO: Debe estar a menos de 30m del paciente');
+                return;
+            }
+            
+            // Check for photo
+            if (!confirm('¿Has tomado la foto requerida?')) {
+                alert('📷 FOTO OBLIGATORIA: No se puede marcar sin foto');
+                return;
+            }
+            
+            if (type === 'in') {
+                alert('✅ Entrada marcada correctamente');
+                document.getElementById('checkInBtn').disabled = true;
+                document.getElementById('checkInBtn').textContent = '✓ Entrada marcada';
+            } else {
+                alert('✅ Salida marcada correctamente');
+                document.getElementById('checkOutBtn').disabled = true;
+            }
+        }
+        
+        function takePhoto() {
+            if (currentUser.role !== 'caregiver') {
+                alert('Solo las cuidadoras pueden tomar fotos');
+                return;
+            }
+            
+            // In real app, this would open camera
+            alert('📸 Abriendo cámara...\n\nEn la app real esto abriría la cámara del dispositivo.\nSolo se permiten fotos en tiempo real.');
+        }
+        
+        function confirmMedication(button) {
+            if (!confirm('¿Vas a tomar foto del medicamento?')) {
+                alert('⛔ Sin foto = No se puede marcar como dado');
+                return;
+            }
+            
+            // Simulate photo taking and validation
+            alert('📸 Foto tomada y validada\n✅ Medicamento registrado');
+            button.textContent = '✓ Dado';
+            button.disabled = true;
+            button.style.background = '#10b981';
+        }
+        
+        function registerMeal(mealType) {
+            if (!confirm(`¿Tomar foto del ${mealType}?`)) {
+                alert('⛔ Sin foto = No se puede registrar comida');
+                return;
+            }
+            
+            document.getElementById('mealSuccess').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('mealSuccess').style.display = 'none';
+            }, 3000);
+        }
+        
+        function savePatientLocation() {
+            if (currentUser.role !== 'admin') {
+                alert('❌ Solo el FAMILIAR A CARGO (admin) puede configurar la ubicación del paciente');
+                return;
+            }
+            
+            const name = document.getElementById('patientName').value;
+            const address = document.getElementById('patientAddress').value;
+            const lat = document.getElementById('patientLat').value;
+            const lng = document.getElementById('patientLng').value;
+            const radius = document.getElementById('gpsRadius').value;
+            
+            // Validar que todos los campos estén llenos
+            if (!name || !address || !lat || !lng) {
+                alert('⚠️ Todos los campos son obligatorios');
+                return;
+            }
+            
+            // Guardar en localStorage (en app real iría a Supabase)
+            const patientConfig = {
+                name: name,
+                address: address,
+                latitude: parseFloat(lat),
+                longitude: parseFloat(lng),
+                radius: parseInt(radius)
+            };
+            
+            localStorage.setItem('patientLocation', JSON.stringify(patientConfig));
+            
+            document.getElementById('locationSaved').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('locationSaved').style.display = 'none';
+            }, 5000);
+            
+            console.log('Ubicación del paciente guardada:', patientConfig);
+            alert(`✅ Ubicación guardada:\n\n${name}\n${address}\nRadio: ${radius}m\n\nLas cuidadoras SOLO podrán marcar asistencia desde esta ubicación.`);
+        }
+        
+        function saveAlertConfig() {
+            if (currentUser.role !== 'admin') {
+                alert('❌ Solo el FAMILIAR A CARGO puede cambiar estos tiempos');
+                return;
+            }
+            
+            const medTime = document.getElementById('medAlertTime').value;
+            const mealTime = document.getElementById('mealAlertTime').value;
+            const weightTime = document.getElementById('weightAlertTime').value;
+            
+            const alertConfig = {
+                medicationMinutes: parseInt(medTime),
+                mealMinutes: parseInt(mealTime),
+                weightMinutes: parseInt(weightTime)
+            };
+            
+            localStorage.setItem('alertConfig', JSON.stringify(alertConfig));
+            
+            alert(`✅ Tiempos de alerta configurados:\n\n` +
+                  `Medicamentos: ${medTime} minutos\n` +
+                  `Comidas: ${mealTime} minutos\n` +
+                  `Peso: ${weightTime} minutos\n\n` +
+                  `Si no hay foto después de estos tiempos, se notificará a TODOS los familiares.`);
+        }
+        
+        function addCaregiver() {
+            if (currentUser.role !== 'admin') {
+                alert('❌ Solo el FAMILIAR A CARGO puede agregar cuidadoras');
+                return;
+            }
+            
+            const name = prompt('Nombre de la nueva cuidadora:');
+            const schedule = prompt('Horario (ej: Lunes a Viernes 8:00-14:00):');
+            
+            if (name && schedule) {
+                alert(`✅ Cuidadora agregada:\n${name}\nHorario: ${schedule}\n\nSe le enviará email con sus credenciales de acceso.`);
+            }
+        }
+        
+        function removeCaregiver() {
+            if (currentUser.role !== 'admin') {
+                alert('❌ Solo el FAMILIAR A CARGO puede eliminar cuidadoras');
+                return;
+            }
+            
+            if (confirm('¿Seguro que quiere eliminar esta cuidadora? Se perderá acceso al sistema.')) {
+                alert('✅ Cuidadora eliminada del sistema');
+            }
+        }
+        
+        function addFamilyMember() {
+            if (currentUser.role !== 'admin') {
+                alert('❌ Solo el FAMILIAR A CARGO puede agregar observadores');
+                return;
+            }
+            
+            const name = prompt('Nombre del familiar:');
+            const email = prompt('Email del familiar:');
+            const relationship = prompt('Parentesco (ej: Hijo, Nieta, Sobrino):');
+            
+            if (name && email && relationship) {
+                alert(`✅ Familiar observador agregado:\n\n` +
+                      `${name} (${relationship})\n` +
+                      `${email}\n\n` +
+                      `Recibirá TODAS las alertas pero NO podrá modificar configuración.`);
+            }
+        }
+        
+        function saveConfig() {
+            // Función legacy mantenida por compatibilidad
+            saveAlertConfig();
+        }
+        
+        // Auto-refresh GPS every 30 seconds
+        setInterval(checkGPS, 30000);
+    </script>
+</body>
+</html>
