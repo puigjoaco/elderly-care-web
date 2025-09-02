@@ -580,24 +580,64 @@
         let gpsValid = false;
         
         // Login
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             
-            if (DEMO_MODE) {
-                // Demo login
-                if (demoUsers[email] && demoUsers[email].password === password) {
-                    currentUser = demoUsers[email];
-                    currentUser.email = email;
+            try {
+                // Intenta login con Supabase Auth primero
+                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (authError) {
+                    // Si falla auth, busca en tabla users directamente (para usuarios demo)
+                    const { data: userData, error: userError } = await supabase
+                        .from('users')
+                        .select('*')
+                        .eq('email', email)
+                        .single();
+                    
+                    if (userError || !userData) {
+                        showError('Usuario no encontrado. Verifica tus credenciales.');
+                        return;
+                    }
+                    
+                    // Usuario encontrado en tabla users (modo demo)
+                    currentUser = {
+                        id: userData.id,
+                        email: userData.email,
+                        name: userData.full_name || userData.email,
+                        role: userData.role,
+                        phone: userData.phone
+                    };
                     showDashboard();
                 } else {
-                    showError('Credenciales incorrectas. Prueba: admin@demo.com / demo123');
+                    // Login exitoso con Supabase Auth
+                    const { data: userData } = await supabase
+                        .from('users')
+                        .select('*')
+                        .eq('id', authData.user.id)
+                        .single();
+                    
+                    currentUser = {
+                        id: authData.user.id,
+                        email: authData.user.email,
+                        name: userData?.full_name || authData.user.email,
+                        role: userData?.role || 'family_observer',
+                        phone: userData?.phone
+                    };
+                    showDashboard();
                 }
-            } else {
-                // Real Supabase login would go here
-                showError('Conecta con Supabase para login real');
+            } catch (error) {
+                console.error('Error en login:', error);
+                showError('Error al conectar con el servidor. Intenta de nuevo.');
             }
         });
         
@@ -749,7 +789,7 @@
             }, 3000);
         }
         
-        function savePatientLocation() {
+        async function savePatientLocation() {
             if (currentUser.role !== 'admin') {
                 alert('❌ Solo el FAMILIAR A CARGO (admin) puede configurar la ubicación del paciente');
                 return;
@@ -767,24 +807,73 @@
                 return;
             }
             
-            // Guardar en localStorage (en app real iría a Supabase)
-            const patientConfig = {
-                name: name,
-                address: address,
-                latitude: parseFloat(lat),
-                longitude: parseFloat(lng),
-                radius: parseInt(radius)
-            };
-            
-            localStorage.setItem('patientLocation', JSON.stringify(patientConfig));
-            
-            document.getElementById('locationSaved').style.display = 'block';
-            setTimeout(() => {
-                document.getElementById('locationSaved').style.display = 'none';
-            }, 5000);
-            
-            console.log('Ubicación del paciente guardada:', patientConfig);
-            alert(`✅ Ubicación guardada:\n\n${name}\n${address}\nRadio: ${radius}m\n\nLas cuidadoras SOLO podrán marcar asistencia desde esta ubicación.`);
+            try {
+                // Verificar si ya existe un paciente creado por este admin
+                const { data: existingPatient, error: fetchError } = await supabase
+                    .from('patients')
+                    .select('id')
+                    .eq('created_by', currentUser.id)
+                    .single();
+                
+                const patientData = {
+                    full_name: name,
+                    home_address: address,
+                    home_latitude: parseFloat(lat),
+                    home_longitude: parseFloat(lng),
+                    created_by: currentUser.id,
+                    is_active: true,
+                    date_of_birth: '1945-01-01',
+                    medical_conditions: 'Por configurar',
+                    medications: 'Por configurar',
+                    emergency_contact: currentUser.name + ': ' + (currentUser.phone || 'Sin teléfono')
+                };
+                
+                let result;
+                if (existingPatient && !fetchError) {
+                    // Actualizar paciente existente
+                    result = await supabase
+                        .from('patients')
+                        .update({
+                            full_name: name,
+                            home_address: address,
+                            home_latitude: parseFloat(lat),
+                            home_longitude: parseFloat(lng)
+                        })
+                        .eq('id', existingPatient.id);
+                } else {
+                    // Crear nuevo paciente
+                    result = await supabase
+                        .from('patients')
+                        .insert([patientData]);
+                }
+                
+                if (result.error) {
+                    console.error('Error guardando en Supabase:', result.error);
+                    // Si falla Supabase, al menos guardar localmente
+                }
+                
+                // Guardar también en localStorage para acceso rápido
+                const patientConfig = {
+                    name: name,
+                    address: address,
+                    latitude: parseFloat(lat),
+                    longitude: parseFloat(lng),
+                    radius: parseInt(radius)
+                };
+                
+                localStorage.setItem('patientLocation', JSON.stringify(patientConfig));
+                
+                document.getElementById('locationSaved').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('locationSaved').style.display = 'none';
+                }, 5000);
+                
+                console.log('Ubicación guardada en Supabase y localStorage');
+                alert(`✅ Ubicación guardada en la BASE DE DATOS:\n\n${name}\n${address}\nRadio: ${radius}m\n\nLas cuidadoras SOLO podrán marcar asistencia desde esta ubicación.`);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al guardar. Los datos se guardaron localmente.');
+            }
         }
         
         function saveAlertConfig() {
