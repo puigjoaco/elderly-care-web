@@ -597,6 +597,7 @@
                 });
                 
                 if (authError) {
+                    console.log('Auth error, trying direct users table lookup...');
                     // Si falla auth, busca en tabla users directamente (para usuarios demo)
                     const { data: userData, error: userError } = await supabase
                         .from('users')
@@ -606,33 +607,66 @@
                     
                     if (userError || !userData) {
                         showError('Usuario no encontrado. Verifica tus credenciales.');
+                        console.error('User lookup error:', userError);
                         return;
                     }
                     
                     // Usuario encontrado en tabla users (modo demo)
+                    console.log('Usuario encontrado:', userData);
                     currentUser = {
                         id: userData.id,
                         email: userData.email,
                         name: userData.full_name || userData.email,
-                        role: userData.role,
+                        role: userData.role || 'family_observer', // Asegurar que siempre hay un rol
                         phone: userData.phone
                     };
+                    console.log('Current user set:', currentUser);
                     showDashboard();
                 } else {
                     // Login exitoso con Supabase Auth
-                    const { data: userData } = await supabase
+                    console.log('Auth successful, getting user data...');
+                    const { data: userData, error: userDataError } = await supabase
                         .from('users')
                         .select('*')
                         .eq('id', authData.user.id)
                         .single();
                     
-                    currentUser = {
-                        id: authData.user.id,
-                        email: authData.user.email,
-                        name: userData?.full_name || authData.user.email,
-                        role: userData?.role || 'family_observer',
-                        phone: userData?.phone
-                    };
+                    if (userDataError) {
+                        // Si no encuentra en users, buscar por email
+                        const { data: userByEmail } = await supabase
+                            .from('users')
+                            .select('*')
+                            .eq('email', authData.user.email)
+                            .single();
+                        
+                        if (userByEmail) {
+                            currentUser = {
+                                id: userByEmail.id,
+                                email: userByEmail.email,
+                                name: userByEmail.full_name || userByEmail.email,
+                                role: userByEmail.role || 'family_observer',
+                                phone: userByEmail.phone
+                            };
+                        } else {
+                            // Usuario no existe en tabla users
+                            currentUser = {
+                                id: authData.user.id,
+                                email: authData.user.email,
+                                name: authData.user.email,
+                                role: 'family_observer', // Rol por defecto
+                                phone: ''
+                            };
+                        }
+                    } else {
+                        currentUser = {
+                            id: userData.id,
+                            email: userData.email,
+                            name: userData.full_name || userData.email,
+                            role: userData.role || 'family_observer',
+                            phone: userData.phone
+                        };
+                    }
+                    console.log('Current user set:', currentUser);
                     showDashboard();
                 }
             } catch (error) {
@@ -658,11 +692,12 @@
         
         function getRoleName(role) {
             const roles = {
-                'admin': 'Administrador (Familiar)',
+                'admin': 'Administrador (Control Total)',
                 'caregiver': 'Cuidadora',
                 'family_observer': 'Familiar (Solo Lectura)'
             };
-            return roles[role] || role;
+            console.log('Role recibido:', role); // Debug
+            return roles[role] || `Rol: ${role}`;
         }
         
         function showError(msg) {
