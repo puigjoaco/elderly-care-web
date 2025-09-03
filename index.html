@@ -991,7 +991,7 @@
                 
                 let result;
                 if (existingPatient && !fetchError) {
-                    // Actualizar paciente existente usando supabaseAdmin
+                    // Actualizar paciente existente - Intentar con ambos clientes
                     result = await supabaseAdmin
                         .from('patients')
                         .update({
@@ -1001,20 +1001,74 @@
                             address: address || 'Sin dirección especificada',
                             geofence_radius_meters: parseInt(radius) || 30
                         })
-                        .eq('id', existingPatient.id);
+                        .eq('id', existingPatient.id)
+                        .select();
+                        
+                    // Si falla con admin, intentar con cliente normal
+                    if (result.error && result.error.message.includes('infinite recursion')) {
+                        console.log('Intentando con cliente normal...');
+                        result = await supabase
+                            .from('patients')
+                            .update({
+                                full_name: name,
+                                gps_latitude: parseFloat(lat),
+                                gps_longitude: parseFloat(lng),
+                                address: address || 'Sin dirección especificada',
+                                geofence_radius_meters: parseInt(radius) || 30
+                            })
+                            .eq('id', existingPatient.id)
+                            .select();
+                    }
                 } else {
-                    // Crear nuevo paciente usando supabaseAdmin
+                    // Crear nuevo paciente - Intentar con ambos clientes
                     result = await supabaseAdmin
                         .from('patients')
-                        .insert([patientData]);
+                        .insert([patientData])
+                        .select();
+                        
+                    // Si falla con admin, intentar con cliente normal
+                    if (result.error && result.error.message.includes('infinite recursion')) {
+                        console.log('Intentando con cliente normal...');
+                        result = await supabase
+                            .from('patients')
+                            .insert([patientData])
+                            .select();
+                    }
                 }
                 
                 if (result.error) {
-                    console.error('❌ Error guardando en Supabase:', result.error);
-                    alert(`❌ ERROR al guardar en la base de datos:\n\n${result.error.message}\n\nLos datos se guardaron solo localmente.`);
-                    // Si falla Supabase, al menos guardar localmente
+                    console.error('❌ Error guardando:', result.error);
+                    
+                    // Verificar si los datos se guardaron de todas formas
+                    const { data: checkData } = await supabaseAdmin
+                        .from('patients')
+                        .select('full_name, gps_latitude, gps_longitude')
+                        .eq('created_by', currentUser.id)
+                        .single();
+                    
+                    if (checkData && 
+                        checkData.full_name === name && 
+                        Math.abs(checkData.gps_latitude - parseFloat(lat)) < 0.001 &&
+                        Math.abs(checkData.gps_longitude - parseFloat(lng)) < 0.001) {
+                        // Los datos SÍ se guardaron a pesar del error
+                        console.log('✅ Datos verificados - guardados correctamente');
+                        document.getElementById('locationSaved').style.display = 'block';
+                        setTimeout(() => {
+                            document.getElementById('locationSaved').style.display = 'none';
+                        }, 5000);
+                        alert(`✅ DATOS GUARDADOS CORRECTAMENTE\n\nLa ubicación del paciente ha sido actualizada:\n${name}\n${address}\n\nLas cuidadoras deberán estar en esta ubicación.`);
+                        return;
+                    }
+                    
+                    // Si realmente falló
+                    alert(`❌ ERROR al guardar:\n\n${result.error.message}\n\nIntenta nuevamente.`);
                 } else {
-                    console.log('✅ Paciente guardado exitosamente en Supabase');
+                    console.log('✅ Paciente guardado exitosamente');
+                    document.getElementById('locationSaved').style.display = 'block';
+                    setTimeout(() => {
+                        document.getElementById('locationSaved').style.display = 'none';
+                    }, 5000);
+                    alert(`✅ DATOS GUARDADOS CORRECTAMENTE\n\nLa ubicación del paciente ha sido actualizada:\n${name}\n${address}\n\nLas cuidadoras deberán estar en esta ubicación.`);
                 }
                 
                 // Guardar también en localStorage para acceso rápido
