@@ -599,6 +599,9 @@
                         <small style="color: #a78bfa;">
                             💡 En Google Maps: Click derecho → "¿Qué hay aquí?" → Copiar coordenadas
                         </small>
+                        <button type="button" onclick="fixCoordinates()" style="margin-top: 10px; background: #6366f1; padding: 8px; font-size: 14px;">
+                            🔧 Corregir Coordenadas (máx 6 decimales)
+                        </button>
                     </div>
                     
                     <div class="form-group">
@@ -978,13 +981,36 @@
             let lng = document.getElementById('patientLng').value;
             const radius = document.getElementById('gpsRadius').value;
             
-            // Truncar decimales automáticamente para evitar overflow
+            // FORZAR truncamiento de decimales ANTES de cualquier otra cosa
             if (lat) {
-                lat = parseFloat(lat).toFixed(6);
+                // Convertir a string, luego a float, luego limitar a 6 decimales
+                let latStr = String(lat);
+                if (latStr.includes('.')) {
+                    let parts = latStr.split('.');
+                    if (parts[1] && parts[1].length > 6) {
+                        lat = parseFloat(parseFloat(lat).toFixed(6));
+                    } else {
+                        lat = parseFloat(lat);
+                    }
+                } else {
+                    lat = parseFloat(lat);
+                }
                 document.getElementById('patientLat').value = lat;
             }
+            
             if (lng) {
-                lng = parseFloat(lng).toFixed(6);
+                // Convertir a string, luego a float, luego limitar a 6 decimales
+                let lngStr = String(lng);
+                if (lngStr.includes('.')) {
+                    let parts = lngStr.split('.');
+                    if (parts[1] && parts[1].length > 6) {
+                        lng = parseFloat(parseFloat(lng).toFixed(6));
+                    } else {
+                        lng = parseFloat(lng);
+                    }
+                } else {
+                    lng = parseFloat(lng);
+                }
                 document.getElementById('patientLng').value = lng;
             }
             
@@ -994,6 +1020,17 @@
                 return;
             }
             
+            // Asegurar que los valores son números válidos con máximo 6 decimales
+            const latFixed = parseFloat(parseFloat(lat).toFixed(6));
+            const lngFixed = parseFloat(parseFloat(lng).toFixed(6));
+            const radiusInt = Math.min(Math.max(parseInt(radius) || 30, 10), 1000);
+            
+            console.log('Valores a guardar:', {
+                lat: latFixed,
+                lng: lngFixed,
+                radius: radiusInt
+            });
+            
             try {
                 // USAR supabaseAdmin PARA BYPASS RLS
                 // Verificar si ya existe un paciente creado por este admin
@@ -1002,11 +1039,6 @@
                     .select('id')
                     .eq('created_by', currentUser.id)
                     .single();
-                
-                // Limitar decimales para evitar overflow numérico
-                const latFixed = parseFloat(parseFloat(lat).toFixed(6));
-                const lngFixed = parseFloat(parseFloat(lng).toFixed(6));
-                const radiusInt = Math.min(Math.max(parseInt(radius) || 30, 10), 1000);
                 
                 const patientData = {
                     full_name: name,
@@ -1150,6 +1182,25 @@
             } catch (err) {
                 console.error('Error cargando datos del paciente:', err);
             }
+        }
+        
+        function fixCoordinates() {
+            const latInput = document.getElementById('patientLat');
+            const lngInput = document.getElementById('patientLng');
+            
+            if (latInput.value) {
+                const originalLat = latInput.value;
+                latInput.value = parseFloat(latInput.value).toFixed(6);
+                console.log('Latitud corregida de', originalLat, 'a', latInput.value);
+            }
+            
+            if (lngInput.value) {
+                const originalLng = lngInput.value;
+                lngInput.value = parseFloat(lngInput.value).toFixed(6);
+                console.log('Longitud corregida de', originalLng, 'a', lngInput.value);
+            }
+            
+            alert('✅ Coordenadas corregidas a máximo 6 decimales');
         }
         
         function saveAlertConfig() {
