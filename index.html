@@ -589,8 +589,10 @@
                     <div class="form-group">
                         <label>🗺️ Coordenadas GPS (Obtener de Google Maps)</label>
                         <div style="display: flex; gap: 10px;">
-                            <input type="number" id="patientLat" value="40.4168" step="0.0001" placeholder="Latitud">
-                            <input type="number" id="patientLng" value="-3.7038" step="0.0001" placeholder="Longitud">
+                            <input type="number" id="patientLat" value="-33.4489" step="0.000001" min="-90" max="90" placeholder="Latitud" 
+                                   oninput="if(this.value.includes('.')) { let parts = this.value.split('.'); if(parts[1] && parts[1].length > 6) this.value = parseFloat(this.value).toFixed(6); }">
+                            <input type="number" id="patientLng" value="-70.6693" step="0.000001" min="-180" max="180" placeholder="Longitud"
+                                   oninput="if(this.value.includes('.')) { let parts = this.value.split('.'); if(parts[1] && parts[1].length > 6) this.value = parseFloat(this.value).toFixed(6); }">
                         </div>
                         <small style="color: #a78bfa;">
                             💡 En Google Maps: Click derecho → "¿Qué hay aquí?" → Copiar coordenadas
@@ -599,7 +601,7 @@
                     
                     <div class="form-group">
                         <label>📏 Radio permitido (metros)</label>
-                        <input type="number" id="gpsRadius" value="30" min="10" max="100">
+                        <input type="number" id="gpsRadius" value="30" min="10" max="1000">
                         <small style="color: #9ca3af;">La cuidadora debe estar dentro de este radio para marcar asistencia</small>
                     </div>
                     
@@ -979,12 +981,17 @@
                     .eq('created_by', currentUser.id)
                     .single();
                 
+                // Limitar decimales para evitar overflow numérico
+                const latFixed = parseFloat(parseFloat(lat).toFixed(6));
+                const lngFixed = parseFloat(parseFloat(lng).toFixed(6));
+                const radiusInt = Math.min(Math.max(parseInt(radius) || 30, 10), 1000);
+                
                 const patientData = {
                     full_name: name,
-                    gps_latitude: parseFloat(lat),
-                    gps_longitude: parseFloat(lng),
+                    gps_latitude: latFixed,
+                    gps_longitude: lngFixed,
                     address: address || 'Sin dirección especificada',
-                    geofence_radius_meters: parseInt(radius) || 30,
+                    geofence_radius_meters: radiusInt,
                     created_by: currentUser.id,
                     is_active: true
                 };
@@ -996,10 +1003,10 @@
                         .from('patients')
                         .update({
                             full_name: name,
-                            gps_latitude: parseFloat(lat),
-                            gps_longitude: parseFloat(lng),
+                            gps_latitude: latFixed,
+                            gps_longitude: lngFixed,
                             address: address || 'Sin dirección especificada',
-                            geofence_radius_meters: parseInt(radius) || 30
+                            geofence_radius_meters: radiusInt
                         })
                         .eq('id', existingPatient.id)
                         .select();
@@ -1011,10 +1018,10 @@
                             .from('patients')
                             .update({
                                 full_name: name,
-                                gps_latitude: parseFloat(lat),
-                                gps_longitude: parseFloat(lng),
+                                gps_latitude: latFixed,
+                                gps_longitude: lngFixed,
                                 address: address || 'Sin dirección especificada',
-                                geofence_radius_meters: parseInt(radius) || 30
+                                geofence_radius_meters: radiusInt
                             })
                             .eq('id', existingPatient.id)
                             .select();
