@@ -865,11 +865,12 @@
                 
                 const patientData = {
                     full_name: name,
-                    home_latitude: parseFloat(lat),
-                    home_longitude: parseFloat(lng),
+                    gps_latitude: parseFloat(lat),
+                    gps_longitude: parseFloat(lng),
+                    address: address || 'Sin dirección especificada',
+                    geofence_radius_meters: parseInt(radius) || 30,
                     created_by: currentUser.id,
                     is_active: true
-                    // Removidos campos que no existen en la tabla
                 };
                 
                 let result;
@@ -879,8 +880,10 @@
                         .from('patients')
                         .update({
                             full_name: name,
-                            home_latitude: parseFloat(lat),
-                            home_longitude: parseFloat(lng)
+                            gps_latitude: parseFloat(lat),
+                            gps_longitude: parseFloat(lng),
+                            address: address || 'Sin dirección especificada',
+                            geofence_radius_meters: parseInt(radius) || 30
                         })
                         .eq('id', existingPatient.id);
                 } else {
