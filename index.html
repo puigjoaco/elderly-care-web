@@ -865,25 +865,20 @@
                 
                 const patientData = {
                     full_name: name,
-                    home_address: address,
                     home_latitude: parseFloat(lat),
                     home_longitude: parseFloat(lng),
                     created_by: currentUser.id,
-                    is_active: true,
-                    date_of_birth: '1945-01-01',
-                    medical_conditions: 'Por configurar',
-                    medications: 'Por configurar',
-                    emergency_contact: currentUser.name + ': ' + (currentUser.phone || 'Sin teléfono')
+                    is_active: true
+                    // Removidos campos que no existen en la tabla
                 };
                 
                 let result;
                 if (existingPatient && !fetchError) {
-                    // Actualizar paciente existente
+                    // Actualizar paciente existente - SOLO campos que existen
                     result = await supabase
                         .from('patients')
                         .update({
                             full_name: name,
-                            home_address: address,
                             home_latitude: parseFloat(lat),
                             home_longitude: parseFloat(lng)
                         })
