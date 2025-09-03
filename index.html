@@ -664,6 +664,16 @@
         });
         
         function showDashboard() {
+            // FORZAR DETECCIÓN DE ADMIN PARA puig.joaco@gmail.com
+            if (currentUser.email === 'puig.joaco@gmail.com') {
+                console.log('🔴 FORZANDO ROL ADMIN PARA puig.joaco@gmail.com');
+                currentUser.role = 'admin';
+                currentUser.name = 'Joaquin Puig';
+            }
+            
+            console.log('ShowDashboard - User:', currentUser);
+            console.log('ShowDashboard - Role:', currentUser.role);
+            
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
             document.getElementById('userName').textContent = `Bienvenido, ${currentUser.name}`;
@@ -672,9 +682,16 @@
             // Simulate GPS check
             checkGPS();
             
-            // Hide config tab for non-admins
-            if (currentUser.role !== 'admin') {
-                document.querySelector('[onclick="switchTab(\'config\')"]').style.display = 'none';
+            // Show/hide config tab based on role
+            const configTab = document.querySelector('[onclick="switchTab(\'config\')"]');
+            if (configTab) {
+                if (currentUser.role === 'admin') {
+                    configTab.style.display = 'block';
+                    console.log('✅ Config tab shown for admin');
+                } else {
+                    configTab.style.display = 'none';
+                    console.log('❌ Config tab hidden for non-admin');
+                }
             }
         }
         
@@ -706,6 +723,12 @@
         }
         
         function switchTab(tabName) {
+            // Verificar permisos para tab de config
+            if (tabName === 'config' && currentUser.role !== 'admin') {
+                alert('❌ Solo el ADMINISTRADOR puede acceder a configuración');
+                return;
+            }
+            
             // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
@@ -720,7 +743,9 @@
             document.getElementById(tabName).classList.add('active');
             
             // Mark nav tab as active
-            event.target.classList.add('active');
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
         }
         
         function checkGPS() {
