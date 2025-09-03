@@ -624,49 +624,37 @@
                     showDashboard();
                 } else {
                     // Login exitoso con Supabase Auth
-                    console.log('Auth successful, getting user data...');
+                    console.log('Auth successful, looking up user by email...');
+                    // SIEMPRE buscar por email para evitar problemas de ID
                     const { data: userData, error: userDataError } = await supabase
                         .from('users')
                         .select('*')
-                        .eq('id', authData.user.id)
+                        .eq('email', authData.user.email)
                         .single();
                     
-                    if (userDataError) {
-                        // Si no encuentra en users, buscar por email
-                        const { data: userByEmail } = await supabase
-                            .from('users')
-                            .select('*')
-                            .eq('email', authData.user.email)
-                            .single();
-                        
-                        if (userByEmail) {
-                            currentUser = {
-                                id: userByEmail.id,
-                                email: userByEmail.email,
-                                name: userByEmail.full_name || userByEmail.email,
-                                role: userByEmail.role || 'family_observer',
-                                phone: userByEmail.phone
-                            };
-                        } else {
-                            // Usuario no existe en tabla users
-                            currentUser = {
-                                id: authData.user.id,
-                                email: authData.user.email,
-                                name: authData.user.email,
-                                role: 'family_observer', // Rol por defecto
-                                phone: ''
-                            };
-                        }
+                    if (userDataError || !userData) {
+                        console.error('No user found in users table for:', authData.user.email);
+                        // Usuario no existe en tabla users - crear con rol por defecto
+                        currentUser = {
+                            id: authData.user.id,
+                            email: authData.user.email,
+                            name: authData.user.email.split('@')[0],
+                            role: 'family_observer', // Rol por defecto si no existe
+                            phone: ''
+                        };
                     } else {
+                        // Usuario encontrado - usar sus datos reales
+                        console.log('User found in database:', userData);
                         currentUser = {
                             id: userData.id,
                             email: userData.email,
                             name: userData.full_name || userData.email,
-                            role: userData.role || 'family_observer',
-                            phone: userData.phone
+                            role: userData.role, // Usar el rol de la base de datos
+                            phone: userData.phone || ''
                         };
                     }
-                    console.log('Current user set:', currentUser);
+                    
+                    console.log('Current user set with role:', currentUser.role);
                     showDashboard();
                 }
             } catch (error) {
