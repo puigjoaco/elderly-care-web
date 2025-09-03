@@ -589,18 +589,14 @@
                     <div class="form-group">
                         <label>🗺️ Coordenadas GPS (Obtener de Google Maps)</label>
                         <div style="display: flex; gap: 10px;">
-                            <input type="number" id="patientLat" step="0.000001" min="-90" max="90" placeholder="Latitud" 
-                                   onblur="if(this.value) this.value = parseFloat(this.value).toFixed(6);"
-                                   oninput="if(this.value && this.value.includes('.')) { let parts = this.value.split('.'); if(parts[1] && parts[1].length > 6) this.value = parseFloat(this.value).toFixed(6); }">
-                            <input type="number" id="patientLng" step="0.000001" min="-180" max="180" placeholder="Longitud"
-                                   onblur="if(this.value) this.value = parseFloat(this.value).toFixed(6);"
-                                   oninput="if(this.value && this.value.includes('.')) { let parts = this.value.split('.'); if(parts[1] && parts[1].length > 6) this.value = parseFloat(this.value).toFixed(6); }">
+                            <input type="number" id="patientLat" step="any" min="-90" max="90" placeholder="Latitud">
+                            <input type="number" id="patientLng" step="any" min="-180" max="180" placeholder="Longitud">
                         </div>
                         <small style="color: #a78bfa;">
                             💡 En Google Maps: Click derecho → "¿Qué hay aquí?" → Copiar coordenadas
                         </small>
-                        <button type="button" onclick="fixCoordinates()" style="margin-top: 10px; background: #6366f1; padding: 8px; font-size: 14px;">
-                            🔧 Corregir Coordenadas (máx 6 decimales)
+                        <button type="button" onclick="fixCoordinates()" style="margin-top: 10px; background: #6366f1; padding: 8px; font-size: 14px; display: none;">
+                            🔧 Truncar a 6 decimales (solo si hay error)
                         </button>
                     </div>
                     
@@ -983,34 +979,14 @@
             
             // FORZAR truncamiento de decimales ANTES de cualquier otra cosa
             if (lat) {
-                // Convertir a string, luego a float, luego limitar a 6 decimales
-                let latStr = String(lat);
-                if (latStr.includes('.')) {
-                    let parts = latStr.split('.');
-                    if (parts[1] && parts[1].length > 6) {
-                        lat = parseFloat(parseFloat(lat).toFixed(6));
-                    } else {
-                        lat = parseFloat(lat);
-                    }
-                } else {
-                    lat = parseFloat(lat);
-                }
+                // Mantener la precisión original, solo convertir a número
+                lat = parseFloat(lat);
                 document.getElementById('patientLat').value = lat;
             }
             
             if (lng) {
-                // Convertir a string, luego a float, luego limitar a 6 decimales
-                let lngStr = String(lng);
-                if (lngStr.includes('.')) {
-                    let parts = lngStr.split('.');
-                    if (parts[1] && parts[1].length > 6) {
-                        lng = parseFloat(parseFloat(lng).toFixed(6));
-                    } else {
-                        lng = parseFloat(lng);
-                    }
-                } else {
-                    lng = parseFloat(lng);
-                }
+                // Mantener la precisión original, solo convertir a número
+                lng = parseFloat(lng);
                 document.getElementById('patientLng').value = lng;
             }
             
@@ -1020,9 +996,9 @@
                 return;
             }
             
-            // Asegurar que los valores son números válidos con máximo 6 decimales
-            const latFixed = parseFloat(parseFloat(lat).toFixed(6));
-            const lngFixed = parseFloat(parseFloat(lng).toFixed(6));
+            // Convertir a números pero mantener la precisión original (hasta 10 decimales)
+            const latFixed = parseFloat(lat);
+            const lngFixed = parseFloat(lng);
             const radiusInt = Math.min(Math.max(parseInt(radius) || 30, 10), 1000);
             
             console.log('Valores a guardar:', {
