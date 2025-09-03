@@ -896,8 +896,11 @@
                 }
                 
                 if (result.error) {
-                    console.error('Error guardando en Supabase:', result.error);
+                    console.error('❌ Error guardando en Supabase:', result.error);
+                    alert(`❌ ERROR al guardar en la base de datos:\n\n${result.error.message}\n\nLos datos se guardaron solo localmente.`);
                     // Si falla Supabase, al menos guardar localmente
+                } else {
+                    console.log('✅ Paciente guardado exitosamente en Supabase');
                 }
                 
                 // Guardar también en localStorage para acceso rápido
