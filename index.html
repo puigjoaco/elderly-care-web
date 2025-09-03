@@ -641,10 +641,9 @@
                     <h3>👥 Gestión de Cuidadoras</h3>
                     
                     <div class="form-group">
-                        <label>Cuidadora Actual</label>
+                        <label>Cuidadoras Registradas</label>
                         <select id="caregiverSelect">
-                            <option>Ana Martínez - Turno Mañana (8:00-14:00)</option>
-                            <option>Rosa Pérez - Turno Tarde (14:00-20:00)</option>
+                            <option value="">Cargando cuidadoras...</option>
                         </select>
                     </div>
                     
@@ -800,9 +799,10 @@
             // Simulate GPS check
             checkGPS();
             
-            // Load patient data if admin
+            // Load patient data and caregivers if admin
             if (currentUser.role === 'admin') {
                 loadPatientData();
+                loadCaregivers();
             }
             
             // Show/hide config tab based on role
@@ -852,9 +852,10 @@
                 return;
             }
             
-            // Cargar datos del paciente cuando se abre la pestaña de config
+            // Cargar datos del paciente y cuidadoras cuando se abre la pestaña de config
             if (tabName === 'config' && currentUser.role === 'admin') {
                 loadPatientData();
+                loadCaregivers();
             }
             
             // Hide all tabs
@@ -1132,6 +1133,49 @@
             }
         }
         
+        async function loadCaregivers() {
+            if (!currentUser || currentUser.role !== 'admin') return;
+            
+            try {
+                // Cargar cuidadoras desde Supabase
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('id, full_name, email, phone, is_active')
+                    .eq('role', 'caregiver')
+                    .order('full_name');
+                
+                const select = document.getElementById('caregiverSelect');
+                
+                if (error) {
+                    select.innerHTML = '<option value="">Error cargando cuidadoras</option>';
+                    console.error('Error cargando cuidadoras:', error);
+                    return;
+                }
+                
+                if (data && data.length > 0) {
+                    // Limpiar opciones existentes
+                    select.innerHTML = '<option value="">Seleccionar cuidadora...</option>';
+                    
+                    // Agregar cada cuidadora
+                    data.forEach(caregiver => {
+                        const option = document.createElement('option');
+                        option.value = caregiver.id;
+                        const status = caregiver.is_active ? '✅' : '❌';
+                        const phone = caregiver.phone ? ` - ${caregiver.phone}` : '';
+                        option.textContent = `${status} ${caregiver.full_name || 'Sin nombre'} (${caregiver.email})${phone}`;
+                        select.appendChild(option);
+                    });
+                    
+                    console.log(`✅ Cargadas ${data.length} cuidadoras`);
+                } else {
+                    select.innerHTML = '<option value="">No hay cuidadoras registradas</option>';
+                }
+            } catch (err) {
+                console.error('Error cargando cuidadoras:', err);
+                document.getElementById('caregiverSelect').innerHTML = '<option value="">Error al cargar</option>';
+            }
+        }
+        
         async function loadPatientData() {
             if (!currentUser || currentUser.role !== 'admin') return;
             
@@ -1204,28 +1248,109 @@
                   `Si no hay foto después de estos tiempos, se notificará a TODOS los familiares.`);
         }
         
-        function addCaregiver() {
+        async function addCaregiver() {
             if (currentUser.role !== 'admin') {
                 alert('❌ Solo el FAMILIAR A CARGO puede agregar cuidadoras');
                 return;
             }
             
-            const name = prompt('Nombre de la nueva cuidadora:');
-            const schedule = prompt('Horario (ej: Lunes a Viernes 8:00-14:00):');
+            const name = prompt('Nombre completo de la nueva cuidadora:');
+            if (!name) return;
             
-            if (name && schedule) {
-                alert(`✅ Cuidadora agregada:\n${name}\nHorario: ${schedule}\n\nSe le enviará email con sus credenciales de acceso.`);
+            const email = prompt('Email de la cuidadora:');
+            if (!email || !email.includes('@')) {
+                alert('❌ Email inválido');
+                return;
+            }
+            
+            const phone = prompt('Teléfono (opcional):') || null;
+            
+            try {
+                // Crear usuario en Auth de Supabase (sin password, se enviará por email)
+                const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+                    email: email,
+                    password: 'temporal123',  // Password temporal
+                    email_confirm: true,
+                    user_metadata: {
+                        full_name: name,
+                        role: 'caregiver'
+                    }
+                });
+                
+                if (authError && !authError.message.includes('already registered')) {
+                    console.error('Error en Auth:', authError);
+                    // Continuar con la creación en la tabla users
+                }
+                
+                // Crear en tabla users
+                const { data, error } = await supabaseAdmin
+                    .from('users')
+                    .insert([{
+                        email: email,
+                        full_name: name,
+                        phone: phone,
+                        role: 'caregiver',
+                        is_active: true
+                    }])
+                    .select();
+                
+                if (error) {
+                    if (error.code === '23505') {
+                        alert('❌ Esta cuidadora ya está registrada');
+                    } else {
+                        console.error('Error:', error);
+                        alert('❌ Error al agregar cuidadora: ' + error.message);
+                    }
+                } else {
+                    alert(`✅ ¡Cuidadora agregada exitosamente!\n\nNombre: ${name}\nEmail: ${email}\n\nYa puede iniciar sesión en el sistema.`);
+                    // Recargar lista de cuidadoras
+                    loadCaregivers();
+                }
+            } catch (err) {
+                console.error('Error:', err);
+                alert('❌ Error inesperado al agregar cuidadora');
             }
         }
         
-        function removeCaregiver() {
+        async function removeCaregiver() {
             if (currentUser.role !== 'admin') {
                 alert('❌ Solo el FAMILIAR A CARGO puede eliminar cuidadoras');
                 return;
             }
             
-            if (confirm('¿Seguro que quiere eliminar esta cuidadora? Se perderá acceso al sistema.')) {
-                alert('✅ Cuidadora eliminada del sistema');
+            const select = document.getElementById('caregiverSelect');
+            const caregiverId = select.value;
+            
+            if (!caregiverId) {
+                alert('❌ Primero selecciona una cuidadora de la lista');
+                return;
+            }
+            
+            const caregiverName = select.options[select.selectedIndex].text;
+            
+            if (!confirm(`¿Seguro que quieres ELIMINAR a esta cuidadora?\n\n${caregiverName}\n\n⚠️ Esta acción NO se puede deshacer.\nLa cuidadora perderá acceso al sistema.`)) {
+                return;
+            }
+            
+            try {
+                // Desactivar en lugar de eliminar (para mantener historial)
+                const { data, error } = await supabaseAdmin
+                    .from('users')
+                    .update({ is_active: false })
+                    .eq('id', caregiverId)
+                    .select();
+                
+                if (error) {
+                    console.error('Error:', error);
+                    alert('❌ Error al eliminar cuidadora: ' + error.message);
+                } else {
+                    alert('✅ Cuidadora eliminada del sistema\n\nYa no podrá iniciar sesión.');
+                    // Recargar lista de cuidadoras
+                    loadCaregivers();
+                }
+            } catch (err) {
+                console.error('Error:', err);
+                alert('❌ Error inesperado al eliminar cuidadora');
             }
         }
         
