@@ -578,20 +578,20 @@
                     
                     <div class="form-group">
                         <label>Nombre del Paciente</label>
-                        <input type="text" id="patientName" value="Carmen López García" placeholder="Nombre completo">
+                        <input type="text" id="patientName" placeholder="Nombre completo">
                     </div>
                     
                     <div class="form-group">
                         <label>📍 Dirección EXACTA donde vive</label>
-                        <input type="text" id="patientAddress" value="Calle Principal 123, Piso 3B, Madrid" placeholder="Dirección completa">
+                        <input type="text" id="patientAddress" placeholder="Dirección completa">
                     </div>
                     
                     <div class="form-group">
                         <label>🗺️ Coordenadas GPS (Obtener de Google Maps)</label>
                         <div style="display: flex; gap: 10px;">
-                            <input type="number" id="patientLat" value="-33.4489" step="0.000001" min="-90" max="90" placeholder="Latitud" 
+                            <input type="number" id="patientLat" step="0.000001" min="-90" max="90" placeholder="Latitud" 
                                    oninput="if(this.value.includes('.')) { let parts = this.value.split('.'); if(parts[1] && parts[1].length > 6) this.value = parseFloat(this.value).toFixed(6); }">
-                            <input type="number" id="patientLng" value="-70.6693" step="0.000001" min="-180" max="180" placeholder="Longitud"
+                            <input type="number" id="patientLng" step="0.000001" min="-180" max="180" placeholder="Longitud"
                                    oninput="if(this.value.includes('.')) { let parts = this.value.split('.'); if(parts[1] && parts[1].length > 6) this.value = parseFloat(this.value).toFixed(6); }">
                         </div>
                         <small style="color: #a78bfa;">
@@ -601,7 +601,7 @@
                     
                     <div class="form-group">
                         <label>📏 Radio permitido (metros)</label>
-                        <input type="number" id="gpsRadius" value="30" min="10" max="1000">
+                        <input type="number" id="gpsRadius" min="10" max="1000" placeholder="30">
                         <small style="color: #9ca3af;">La cuidadora debe estar dentro de este radio para marcar asistencia</small>
                     </div>
                     
@@ -799,6 +799,11 @@
             // Simulate GPS check
             checkGPS();
             
+            // Load patient data if admin
+            if (currentUser.role === 'admin') {
+                loadPatientData();
+            }
+            
             // Show/hide config tab based on role
             const configTab = document.querySelector('[onclick="switchTab(\'config\')"]');
             if (configTab) {
@@ -844,6 +849,11 @@
             if (tabName === 'config' && currentUser.role !== 'admin') {
                 alert('❌ Solo el ADMINISTRADOR puede acceder a configuración');
                 return;
+            }
+            
+            // Cargar datos del paciente cuando se abre la pestaña de config
+            if (tabName === 'config' && currentUser.role === 'admin') {
+                loadPatientData();
             }
             
             // Hide all tabs
@@ -1099,6 +1109,34 @@
             } catch (error) {
                 console.error('Error:', error);
                 alert('Error al guardar. Los datos se guardaron localmente.');
+            }
+        }
+        
+        async function loadPatientData() {
+            if (!currentUser || currentUser.role !== 'admin') return;
+            
+            try {
+                // Cargar datos del paciente desde Supabase
+                const { data, error } = await supabase
+                    .from('patients')
+                    .select('*')
+                    .eq('created_by', currentUser.id)
+                    .single();
+                
+                if (data && !error) {
+                    // Llenar los campos con los datos existentes
+                    document.getElementById('patientName').value = data.full_name || '';
+                    document.getElementById('patientAddress').value = data.address || '';
+                    document.getElementById('patientLat').value = data.gps_latitude || '';
+                    document.getElementById('patientLng').value = data.gps_longitude || '';
+                    document.getElementById('gpsRadius').value = data.geofence_radius_meters || 30;
+                    
+                    console.log('✅ Datos del paciente cargados:', data.full_name);
+                } else if (error) {
+                    console.log('No hay paciente guardado aún');
+                }
+            } catch (err) {
+                console.error('Error cargando datos del paciente:', err);
             }
         }
         
