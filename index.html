@@ -590,9 +590,11 @@
                         <label>🗺️ Coordenadas GPS (Obtener de Google Maps)</label>
                         <div style="display: flex; gap: 10px;">
                             <input type="number" id="patientLat" step="0.000001" min="-90" max="90" placeholder="Latitud" 
-                                   oninput="if(this.value.includes('.')) { let parts = this.value.split('.'); if(parts[1] && parts[1].length > 6) this.value = parseFloat(this.value).toFixed(6); }">
+                                   onblur="if(this.value) this.value = parseFloat(this.value).toFixed(6);"
+                                   oninput="if(this.value && this.value.includes('.')) { let parts = this.value.split('.'); if(parts[1] && parts[1].length > 6) this.value = parseFloat(this.value).toFixed(6); }">
                             <input type="number" id="patientLng" step="0.000001" min="-180" max="180" placeholder="Longitud"
-                                   oninput="if(this.value.includes('.')) { let parts = this.value.split('.'); if(parts[1] && parts[1].length > 6) this.value = parseFloat(this.value).toFixed(6); }">
+                                   onblur="if(this.value) this.value = parseFloat(this.value).toFixed(6);"
+                                   oninput="if(this.value && this.value.includes('.')) { let parts = this.value.split('.'); if(parts[1] && parts[1].length > 6) this.value = parseFloat(this.value).toFixed(6); }">
                         </div>
                         <small style="color: #a78bfa;">
                             💡 En Google Maps: Click derecho → "¿Qué hay aquí?" → Copiar coordenadas
@@ -972,9 +974,19 @@
             
             const name = document.getElementById('patientName').value;
             const address = document.getElementById('patientAddress').value;
-            const lat = document.getElementById('patientLat').value;
-            const lng = document.getElementById('patientLng').value;
+            let lat = document.getElementById('patientLat').value;
+            let lng = document.getElementById('patientLng').value;
             const radius = document.getElementById('gpsRadius').value;
+            
+            // Truncar decimales automáticamente para evitar overflow
+            if (lat) {
+                lat = parseFloat(lat).toFixed(6);
+                document.getElementById('patientLat').value = lat;
+            }
+            if (lng) {
+                lng = parseFloat(lng).toFixed(6);
+                document.getElementById('patientLng').value = lng;
+            }
             
             // Validar que todos los campos estén llenos
             if (!name || !address || !lat || !lng) {
