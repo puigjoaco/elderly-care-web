@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Supervisión de Cuidados</title>
+    <title>Sistema de Supervisión de Cuidados - Panel Médico</title>
     <!-- Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -14,10 +14,11 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0f0f10;
-            color: #e5e7eb;
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background: #ffffff;
+            color: #111827;
             min-height: 100vh;
+            line-height: 1.6;
         }
         
         .login-container {
@@ -26,84 +27,113 @@
             align-items: center;
             min-height: 100vh;
             padding: 20px;
-            background: linear-gradient(135deg, #0f0f10 0%, #1a1a1f 100%);
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 40%, #bae6fd 100%);
         }
         
         .login-card {
-            background: #18181b;
-            border: 1px solid #27272a;
-            border-radius: 20px;
-            padding: 40px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 48px 40px;
             width: 100%;
-            max-width: 400px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+            max-width: 440px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
         }
         
         .logo {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .logo-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
         }
         
         .logo h1 {
-            color: #8b5cf6;
-            font-size: 28px;
-            margin-bottom: 10px;
+            color: #0c4a6e;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
         }
         
         .logo p {
-            color: #9ca3af;
+            color: #64748b;
             font-size: 14px;
+            font-weight: 400;
         }
         
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
         
         label {
             display: block;
             margin-bottom: 8px;
-            color: #d1d5db;
+            color: #374151;
             font-weight: 500;
+            font-size: 14px;
         }
         
         input {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #27272a;
-            background: #09090b;
-            color: #f3f4f6;
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            background: #ffffff;
+            color: #111827;
             border-radius: 8px;
-            font-size: 16px;
-            transition: all 0.3s;
+            font-size: 15px;
+            transition: all 0.2s;
         }
         
         input::placeholder {
-            color: #6b7280;
+            color: #9ca3af;
         }
         
         input:focus {
             outline: none;
-            border-color: #8b5cf6;
-            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
-            background: #18181b;
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+            background: #ffffff;
+        }
+        
+        input:hover {
+            border-color: #9ca3af;
         }
         
         button {
             width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            padding: 12px;
+            background: #0ea5e9;
             color: white;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.025em;
             transition: all 0.2s;
         }
         
         button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+            background: #0284c7;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
+        }
+        
+        button:active:not(:disabled) {
+            transform: translateY(0);
         }
         
         button:disabled {
@@ -112,88 +142,97 @@
         }
         
         .error-message {
-            color: #ef4444;
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            color: #dc2626;
             font-size: 14px;
-            margin-top: 10px;
             display: none;
+        }
+        
+        .error-message.show {
+            display: block;
         }
         
         .dashboard {
             display: none;
-            background: #09090b;
+            background: #f9fafb;
             min-height: 100vh;
         }
         
         .header {
-            background: linear-gradient(135deg, #27272a, #18181b);
-            color: #f3f4f6;
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
             padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-            border-bottom: 1px solid #27272a;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
         
         .header h2 {
             margin-bottom: 5px;
-            color: #f3f4f6;
+            color: #111827;
+            font-weight: 600;
         }
         
         .header p {
-            opacity: 0.9;
             font-size: 14px;
-            color: #9ca3af;
+            color: #6b7280;
         }
         
         .nav-tabs {
             display: flex;
-            background: #18181b;
-            padding: 10px;
-            gap: 10px;
+            background: #ffffff;
+            padding: 12px 20px;
+            gap: 8px;
             overflow-x: auto;
-            border-bottom: 1px solid #27272a;
+            border-bottom: 1px solid #e5e7eb;
         }
         
         .nav-tab {
-            padding: 10px 20px;
-            background: #27272a;
-            color: #9ca3af;
-            border: 1px solid #3f3f46;
-            border-radius: 8px;
+            padding: 8px 16px;
+            background: transparent;
+            color: #6b7280;
+            border: none;
+            border-radius: 6px;
             cursor: pointer;
             white-space: nowrap;
-            transition: all 0.3s;
+            transition: all 0.2s;
+            font-weight: 500;
         }
         
         .nav-tab:hover {
-            background: #3f3f46;
-            color: #e5e7eb;
+            background: #f3f4f6;
+            color: #111827;
         }
         
         .nav-tab.active {
-            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            background: #0ea5e9;
             color: white;
-            border: 1px solid #8b5cf6;
         }
         
         .content {
-            padding: 20px;
-            background: #09090b;
+            padding: 24px;
+            background: #f9fafb;
         }
         
         .card {
-            background: #18181b;
-            border: 1px solid #27272a;
-            border-radius: 12px;
-            padding: 20px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 24px;
             margin-bottom: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
         
         .card h3 {
-            color: #f3f4f6;
-            margin-bottom: 15px;
+            color: #111827;
+            margin-bottom: 16px;
             display: flex;
             align-items: center;
             gap: 10px;
+            font-size: 18px;
+            font-weight: 600;
         }
         
         .status-badge {
@@ -212,12 +251,12 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 15px;
-            background: #27272a;
-            border: 1px solid #3f3f46;
+            padding: 16px;
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
             border-radius: 8px;
-            margin: 10px 0;
-            color: #e5e7eb;
+            margin: 12px 0;
+            color: #0369a1;
         }
         
         .gps-dot {
@@ -240,49 +279,52 @@
         }
         
         .medication-item {
-            padding: 15px;
-            background: #27272a;
-            border: 1px solid #3f3f46;
+            padding: 16px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
             border-radius: 8px;
             margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            color: #e5e7eb;
+            color: #374151;
         }
         
         .medication-item strong {
-            color: #f3f4f6;
+            color: #111827;
+            font-weight: 600;
         }
         
         .medication-item small {
-            color: #9ca3af;
+            color: #6b7280;
         }
         
         .photo-upload {
-            border: 2px dashed #3f3f46;
-            background: #18181b;
+            border: 2px dashed #d1d5db;
+            background: #f9fafb;
             border-radius: 8px;
-            padding: 20px;
+            padding: 24px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s;
-            color: #9ca3af;
+            transition: all 0.2s;
+            color: #6b7280;
         }
         
         .photo-upload:hover {
-            border-color: #8b5cf6;
-            background: #27272a;
-            color: #e5e7eb;
+            border-color: #0ea5e9;
+            background: #f0f9ff;
+            color: #0369a1;
         }
         
         .photo-upload p {
-            color: #e5e7eb;
+            color: #111827;
             margin-bottom: 5px;
+            font-weight: 500;
         }
         
         .photo-upload small {
-            color: #9ca3af;
+            color: #6b7280;
+            font-size: 13px;
         }
         
         .alert-box {
@@ -313,20 +355,22 @@
         }
         
         .logout-btn {
-            background: #ef4444;
+            background: #ffffff;
             padding: 8px 16px;
             border-radius: 6px;
-            color: white;
-            border: none;
+            color: #6b7280;
+            border: 1px solid #e5e7eb;
             cursor: pointer;
             font-size: 14px;
             float: right;
             transition: all 0.2s;
+            font-weight: 500;
         }
         
         .logout-btn:hover {
-            background: #dc2626;
-            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+            background: #fef2f2;
+            color: #dc2626;
+            border-color: #fecaca;
         }
         
         .tab-content {
@@ -339,41 +383,49 @@
         
         /* Additional styles for form elements in cards */
         .card input, .card select {
-            background: #09090b;
-            border: 1px solid #27272a;
-            color: #f3f4f6;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            color: #111827;
         }
         
         .card input:focus, .card select:focus {
-            border-color: #8b5cf6;
-            background: #18181b;
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
         }
         
         .card select {
             width: 100%;
-            padding: 12px;
+            padding: 10px 14px;
             border-radius: 8px;
-            font-size: 16px;
-            transition: all 0.3s;
+            font-size: 15px;
+            transition: all 0.2s;
             cursor: pointer;
         }
         
         .card select option {
-            background: #18181b;
-            color: #f3f4f6;
+            background: #ffffff;
+            color: #111827;
         }
         
         .card ul li {
-            color: #e5e7eb;
-            border-bottom-color: #27272a !important;
+            color: #374151;
+            border-bottom-color: #e5e7eb !important;
         }
         
         .card button {
-            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            background: #0ea5e9;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
         }
         
         .card button:hover {
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+            background: #0284c7;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
         }
         
         /* Special button styles */
@@ -416,8 +468,9 @@
     <div class="login-container" id="loginScreen">
         <div class="login-card">
             <div class="logo">
-                <h1>🏥 CareTracker</h1>
-                <p>Sistema de Supervisión de Cuidados</p>
+                <div class="logo-icon">⚕</div>
+                <h1>Sistema de Supervisión</h1>
+                <p>Panel de Control Médico</p>
             </div>
             
             <form id="loginForm">
@@ -573,7 +626,7 @@
             
             <!-- Config Tab -->
             <div id="config" class="tab-content">
-                <div class="card" style="border: 2px solid #8b5cf6;">
+                <div class="card" style="border: 2px solid #0ea5e9;">
                     <h3>👵 Configuración del Paciente (Adulto Mayor)</h3>
                     
                     <div class="form-group">
@@ -592,10 +645,10 @@
                             <input type="number" id="patientLat" step="any" min="-90" max="90" placeholder="Latitud">
                             <input type="number" id="patientLng" step="any" min="-180" max="180" placeholder="Longitud">
                         </div>
-                        <small style="color: #a78bfa;">
+                        <small style="color: #0ea5e9;">
                             💡 En Google Maps: Click derecho → "¿Qué hay aquí?" → Copiar coordenadas
                         </small>
-                        <button type="button" onclick="fixCoordinates()" style="margin-top: 10px; background: #6366f1; padding: 8px; font-size: 14px; display: none;">
+                        <button type="button" onclick="fixCoordinates()" style="margin-top: 10px; background: #14b8a6; padding: 8px; font-size: 14px; display: none;">
                             🔧 Truncar a 6 decimales (solo si hay error)
                         </button>
                     </div>
@@ -603,10 +656,10 @@
                     <div class="form-group">
                         <label>📏 Radio permitido (metros)</label>
                         <input type="number" id="gpsRadius" min="10" max="1000" placeholder="30">
-                        <small style="color: #9ca3af;">La cuidadora debe estar dentro de este radio para marcar asistencia</small>
+                        <small style="color: #6b7280;">La cuidadora debe estar dentro de este radio para marcar asistencia</small>
                     </div>
                     
-                    <button onclick="savePatientLocation()" style="background: #10b981;">
+                    <button onclick="savePatientLocation()" style="background: #14b8a6;">
                         📍 Guardar Ubicación del Paciente
                     </button>
                     
@@ -654,16 +707,16 @@
                 <div class="card">
                     <h3>👨‍👩‍👧‍👦 Red Familiar (Observadores)</h3>
                     
-                    <p style="color: #9ca3af; margin-bottom: 10px;">Estos familiares reciben TODAS las alertas pero NO pueden modificar configuración:</p>
+                    <p style="color: #6b7280; margin-bottom: 12px;">Estos familiares reciben TODAS las alertas pero NO pueden modificar configuración:</p>
                     
                     <ul style="list-style: none; padding: 0;">
-                        <li style="padding: 8px; background: #27272a; margin: 5px 0; border-radius: 6px; color: #e5e7eb; border: 1px solid #3f3f46;">
+                        <li style="padding: 10px; background: #f9fafb; margin: 6px 0; border-radius: 6px; color: #374151; border: 1px solid #e5e7eb;">
                             👨 Juan García (Hijo) - juan@email.com
                         </li>
-                        <li style="padding: 8px; background: #27272a; margin: 5px 0; border-radius: 6px; color: #e5e7eb; border: 1px solid #3f3f46;">
+                        <li style="padding: 10px; background: #f9fafb; margin: 6px 0; border-radius: 6px; color: #374151; border: 1px solid #e5e7eb;">
                             👩 Isabel López (Nieta) - isabel@email.com
                         </li>
-                        <li style="padding: 8px; background: #27272a; margin: 5px 0; border-radius: 6px; color: #e5e7eb; border: 1px solid #3f3f46;">
+                        <li style="padding: 10px; background: #f9fafb; margin: 6px 0; border-radius: 6px; color: #374151; border: 1px solid #e5e7eb;">
                             👨 Pedro García (Hijo) - pedro@email.com
                         </li>
                     </ul>
